@@ -1,0 +1,30 @@
+version: "3.8"
+services:
+  mongo-database:
+    image: mongo
+    container_name: mongo-on-docker
+    restart: unless-stopped
+    hostname: mongo-database
+    ports:
+      - 27017:27017
+    volumes:
+      - ./data/db:/data/db
+    networks:
+      - test-network
+
+  noticeboard:
+    image: noticeboard
+    build:
+      dockerfile: Dockerfile
+    container_name: noticeboard
+    restart: on-failure
+    ports:
+      - 9090:9090
+    networks:
+      - test-network
+    links:
+      - mongo-database
+
+networks:
+  test-network:
+    driver: bridge

@@ -1,0 +1,4 @@
+com/board/announcement/controller/BoardController.class
+com/board/announcement/repository/MessageRepository.class
+com/board/announcement/BoardApplication.class
+com/board/announcement/model/Message.class
