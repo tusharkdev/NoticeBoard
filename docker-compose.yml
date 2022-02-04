@@ -18,12 +18,26 @@ services:
       dockerfile: Dockerfile
     container_name: noticeboard
     restart: on-failure
+    hostname: localhost
     ports:
       - 9090:9090
     networks:
       - test-network
     links:
       - mongo-database
+      - redis-database
+
+  redis-database:
+    image: redis
+    build:
+      dockerfile: Dockerfile
+    container_name: redis
+    restart: on-failure
+    hostname: redis-database
+    ports:
+      - 6379:6379
+    networks:
+      - test-network
 
 networks:
   test-network:

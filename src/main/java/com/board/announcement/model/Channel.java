@@ -27,7 +27,5 @@ public class Channel {
     String channelName;
     @Field("description")
     String description;
-    @Field("subscribers")
-    List<User> subscriberList;
 
 }

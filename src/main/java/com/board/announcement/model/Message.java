@@ -24,7 +24,7 @@ public class Message {
     @Id
     private int id;
     @Field("sender")
-    String sender;
+    String senderName;
     @Field("channelName")
     String channelName;
     @Field("msg")
