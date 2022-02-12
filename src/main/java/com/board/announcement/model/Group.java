@@ -23,9 +23,7 @@ public class Channel {
 
     @Id
     private int channelId;
-    @Field("channelname")
     String channelName;
-    @Field("description")
     String description;
 
 }
