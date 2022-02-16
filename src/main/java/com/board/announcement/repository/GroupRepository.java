@@ -5,14 +5,16 @@ import java.util.List;
 import com.board.announcement.model.Group;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
+import org.springframework.stereotype.Repository;
 
-public interface ChannelRepository extends MongoRepository<Group, String> {
+@Repository
+public interface GroupRepository extends MongoRepository<Group, String> {
 
     @Query("{name:'?0'}")
-    Group findChannel(String channelName);
+    Group findGroup(String groupName);
 
     @Query(value = "{category:'?0'}", fields = "{'name' : 1}")
-    List<Group> findAll(String channelName);
+    List<Group> findAll(String groupName);
 
     public long count();
 }

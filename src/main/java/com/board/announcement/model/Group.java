@@ -6,7 +6,6 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -14,16 +13,18 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "channel")
+@Document(collection = "group")
 @Component
-public class Channel {
+public class Group {
 
     @Transient
-    public static final String SEQUENCE_NAME = "channel_sequence";
+    public static final String SEQUENCE_NAME = "group_sequence";
 
     @Id
-    private int channelId;
-    String channelName;
+    private String groupId;
+    String groupName;
     String description;
+    String SocietyId;
+    List<String> subscribers;
 
 }

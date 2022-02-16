@@ -1,67 +1,177 @@
 package com.board.announcement.controller;
 
-import com.board.announcement.model.Channel;
-import com.board.announcement.model.Message;
+import com.board.announcement.model.Group;
+import com.board.announcement.model.Post;
 import com.board.announcement.model.User;
-import com.board.announcement.repository.ChannelRepository;
-import com.board.announcement.repository.MessageRepository;
+import com.board.announcement.repository.GroupRepository;
+import com.board.announcement.repository.PostRepository;
 import com.board.announcement.repository.UserRepository;
-import com.board.announcement.service.DbSequenceGenr;
+import com.board.announcement.service.GroupService;
+import com.board.announcement.service.PostsService;
+import com.board.announcement.service.UserService;
 import lombok.NonNull;
+import org.apache.tomcat.util.json.JSONParser;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.SendTo;
+import org.bson.types.ObjectId;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.data.mongodb.core.MongoOperations;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import org.springframework.data.mongodb.core.query.Query;
+
+import java.util.*;
 
 @RestController
+@PropertySource("classpath:dev.properties")
 public class BoardController {
 
     @Autowired
-    private MessageRepository messageRepository;
+    private PostRepository postRepository;
     @Autowired
-    private ChannelRepository channelRepository;
+    private GroupRepository groupRepository;
     @Autowired
     private UserRepository userRepository;
     @Autowired
-    DbSequenceGenr dbSequenceGenr;
+    MongoOperations mongoOperations;
+    @Autowired
+    MongoTemplate mongoTemplate;
+    @Autowired
+    CacheManager cacheManager;
+
+    @Autowired
+    PostsService postsService;
+
+    @Autowired
+    GroupService groupService;
+
+    @Autowired
+    UserService userService;
+
+    @Value("${dev.firstname}")
+    String firstname;
+
+
+    @PostMapping("/users")
+    @NonNull
+    public ResponseEntity<User> createUser(@RequestBody User user) {
+        try {
+            return new ResponseEntity<User>(userRepository.save(user), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<User>(HttpStatus.BAD_REQUEST);
+        }
+
+    }
+
+    @PostMapping("/groups")
+    @NonNull
+    public ResponseEntity<Group> createGroup(@RequestBody Group group) {
+        try {
+            return new ResponseEntity<Group>(groupRepository.save(group), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<Group>(HttpStatus.BAD_REQUEST);
+        }
+    }
 
 
     @PostMapping("/publish")
-    @CacheEvict(value = "messageCache", key = "#message.channelName", allEntries = true)
-    public Message publishMessage(@RequestBody Message message) {
-        message.setId(dbSequenceGenr.getNextSequence(Message.SEQUENCE_NAME));
-        return messageRepository.save(message);
-    }
-
-    @PostMapping("/createUser")
-    public User createUser(@RequestBody User user) {
-        user.setId(dbSequenceGenr.getNextSequence(User.SEQUENCE_NAME));
-        return userRepository.save(user);
-    }
-
-    @PostMapping("/createChannel")
-    public Channel createChannel(@RequestBody Channel channel) {
-        channel.setChannelId(dbSequenceGenr.getNextSequence(Channel.SEQUENCE_NAME));
-        return channelRepository.save(channel);
-    }
-
-    @GetMapping("/getMessages/{channel}")
     @NonNull
-    @Cacheable(cacheNames = "messageCache", key = "#channel", unless = "#result==null")
-    public List<String> getMessages(@PathVariable String channel) {
-        List<String> result = messageRepository.findMessage(channel);
-        return result;
+    public ResponseEntity<Post> publishPost(@RequestBody Post post) {
+        try {
+            return new ResponseEntity<Post>(postsService.getPostById(post), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<Post>(HttpStatus.BAD_REQUEST);
+        }
     }
 
-    @MessageMapping("/publish")
-    @SendTo("/topic/greetings")
-    public String greeting() throws Exception {
-        Thread.sleep(1000); // simulated delay
-        return "Stomp is working";
+    @PostMapping("/unpublish")
+    @NonNull
+    public ResponseEntity<Post> unpublishPost(@RequestBody Post post) {
+        try {
+            return new ResponseEntity<Post>(postsService.getPostById(post), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<Post>(HttpStatus.BAD_REQUEST);
+        }
+    }
+
+
+    @GetMapping("/posts/{groupId}")
+    public ResponseEntity<Iterable<Post>> getPosts(@PathVariable String groupId) {
+        try {
+            System.out.println("group is " + groupId);
+            List<Post> result = postRepository.findPosts((new ObjectId(groupId)).toString());
+            System.out.println("result is " + result.size());
+            return new ResponseEntity<Iterable<Post>>(result, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<Iterable<Post>>(HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @PostMapping("/subscribe/userId/{userId}/groupId/{groupId}")
+    public ResponseEntity<Map<String, String>> subscribeTo(@PathVariable String userId, @PathVariable String groupId) {
+        String message = "";
+        try {
+            Map<String, String> body = new HashMap<>();
+            message = groupService.subscribeUserToGroup(userId, groupId);
+            body.put("message", message);
+
+            return new ResponseEntity<>(body, HttpStatus.OK);
+
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("/unsubscribe/userId/{userId}/groupId/{groupId}")
+    public ResponseEntity<Map<String, String>> unsubscribeTo(@PathVariable String userId, @PathVariable String groupId) {
+        String message = "";
+        try {
+            Map<String, String> body = new HashMap<>();
+            message = groupService.unsubscribeUserFromGroup(userId, groupId);
+            body.put("message", message);
+
+            return new ResponseEntity<>(body, HttpStatus.OK);
+
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/users/{userId}")
+    public ResponseEntity<User> getUser(@PathVariable String userId) {
+        try {
+            return new ResponseEntity<User>(userService.findUserById(userId), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<User>(HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/groups/{groupId}")
+    public ResponseEntity<Group> getGroup(@PathVariable String groupId) {
+        try {
+            return new ResponseEntity<Group>(groupService.findGroupById(groupId), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<Group>(HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/userPosts/{userId}")
+    public ResponseEntity<Iterable<Post>> getPostsByUserId(@PathVariable String userId) {
+        try {
+            return new ResponseEntity<Iterable<Post>>(postsService.getPostsByUserId(userId), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<Iterable<Post>>(HttpStatus.BAD_REQUEST);
+        }
     }
 }

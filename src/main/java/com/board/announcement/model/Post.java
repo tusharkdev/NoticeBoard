@@ -5,29 +5,32 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.data.mongodb.core.mapping.MongoId;
 import org.springframework.stereotype.Component;
-
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Document(collection = "message")
 @Component
-public class Message {
+public class Post {
 
     @Transient
     public static final String SEQUENCE_NAME = "message_sequence";
 
     @Id
-    private int id;
-    @Field("sender")
-    String senderName;
-    @Field("channelName")
-    String channelName;
-    @Field("msg")
-    String msg;
+    private String postId;
+
+    String senderId;
+
+    String groupId;
+
+    String message;
+
+    public Post(String senderId, String groupId, String message) {
+        this.senderId = senderId;
+        this.groupId = groupId;
+        this.message = message;
+    }
 
 }
