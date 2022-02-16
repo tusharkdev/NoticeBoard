@@ -26,17 +26,16 @@ public class PostsService {
     @Autowired
     UserRepository userRepository;
 
-    public Post getPostById(Post post){
+    public Post savePost(Post post) {
         Cache cache = cacheManager.getCache("postsCache");
         List<Post> posts = new ArrayList<>();
         Cache.ValueWrapper cacheValue = cache.get(post.getGroupId());
         if (cacheValue != null) {
             List<Post> tempList = (List) (cacheValue.get());
-            if(tempList.size() >= 5){
-                posts = new ArrayList(tempList.subList(0,5));
-            }
-            else
-                posts=tempList;
+            if (tempList.size() >= 5) {
+                posts = new ArrayList(tempList.subList(0, 5));
+            } else
+                posts = tempList;
         }
         posts.add(0, post);
         postRepository.save(post);
@@ -46,7 +45,26 @@ public class PostsService {
     }
 
 
-    public List<Post> getPostsByUserId( String userId) {
+    public Post deletePost(Post post) {
+        Cache cache = cacheManager.getCache("postsCache");
+        List<Post> posts = new ArrayList<>();
+        Cache.ValueWrapper cacheValue = cache.get(post.getGroupId());
+        if (cacheValue != null) {
+            List<Post> tempList = (List) (cacheValue.get());
+            if (tempList.size() >= 5) {
+                posts = new ArrayList(tempList.subList(0, 5));
+            } else
+                posts = tempList;
+        }
+        posts.remove(post);
+        postRepository.delete(post);
+        cache.put(post.getGroupId(), posts);
+
+        return post;
+    }
+
+
+    public List<Post> getPostsByUserId(String userId) {
         List<Post> result = new ArrayList<>();
         Cache cache = cacheManager.getCache("postsCache");
         List<Post> tempList;
@@ -67,4 +85,5 @@ public class PostsService {
         }
         return result;
     }
+
 }

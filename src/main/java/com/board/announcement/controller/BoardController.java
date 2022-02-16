@@ -78,7 +78,17 @@ public class BoardController {
     @NonNull
     public ResponseEntity<Group> createGroup(@RequestBody Group group) {
         try {
-            return new ResponseEntity<Group>(groupRepository.save(group), HttpStatus.OK);
+            return new ResponseEntity<Group>(groupService.saveGroup(group), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<Group>(HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @DeleteMapping("/groups")
+    @NonNull
+    public ResponseEntity<Group> removeGroup(@RequestBody Group group) {
+        try {
+            return new ResponseEntity<Group>(groupService.deleteGroup(group), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<Group>(HttpStatus.BAD_REQUEST);
         }
@@ -89,7 +99,7 @@ public class BoardController {
     @NonNull
     public ResponseEntity<Post> publishPost(@RequestBody Post post) {
         try {
-            return new ResponseEntity<Post>(postsService.getPostById(post), HttpStatus.OK);
+            return new ResponseEntity<Post>(postsService.savePost(post), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<Post>(HttpStatus.BAD_REQUEST);
         }
@@ -99,7 +109,7 @@ public class BoardController {
     @NonNull
     public ResponseEntity<Post> unpublishPost(@RequestBody Post post) {
         try {
-            return new ResponseEntity<Post>(postsService.getPostById(post), HttpStatus.OK);
+            return new ResponseEntity<Post>(postsService.deletePost(post), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<Post>(HttpStatus.BAD_REQUEST);
         }

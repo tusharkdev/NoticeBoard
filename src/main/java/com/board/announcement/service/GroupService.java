@@ -6,6 +6,8 @@ import com.board.announcement.repository.GroupRepository;
 import com.board.announcement.repository.UserRepository;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -24,6 +26,9 @@ public class GroupService {
 
     @Autowired
     GroupRepository groupRepository;
+
+    @Autowired
+    CacheManager cacheManager;
 
     @Autowired
     MongoTemplate mongoTemplate;
@@ -57,5 +62,16 @@ public class GroupService {
 
     public Group findGroupById(String groupId) {
         return groupRepository.findById(String.valueOf(new ObjectId(groupId))).get();
+    }
+
+    public Group saveGroup(Group group) {
+        groupRepository.save(group);
+        return group;
+    }
+
+    public Group deleteGroup(Group group) {
+        groupRepository.delete(group);
+        cacheManager.getCache(group.getGroupId()).clear();
+        return group;
     }
 }
