@@ -1,4 +1,4 @@
-version: "3.7"
+version: "3.8"
 services:
   api_service:
     build: .
@@ -10,5 +10,6 @@ services:
   mongo_db:
     image: mongo
     restart: always
+    hostname: mongodb
     ports:
       - 27017:27017

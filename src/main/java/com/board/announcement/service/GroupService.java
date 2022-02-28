@@ -41,7 +41,7 @@ public class GroupService {
             Optional<User> user = userRepository.findById(String.valueOf(new ObjectId(userId)));
             if (user.isPresent()) {
                 groupIds = user.get().getGroupIds();
-                if (groupIds.isEmpty())
+                if (groupIds == null)
                     groupIds = new ArrayList<>();
                 groupIds.add(groupId);
                 Query query = new Query();

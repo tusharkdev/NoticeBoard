@@ -1,32 +1,24 @@
 version: "3.8"
 services:
-  mongo-database:
+
+  mongodb:
     image: mongo
-    container_name: mongo-on-docker
-    restart: unless-stopped
+    container_name: mongodb
+    hostname: mongodb
     ports:
       - 27017:27017
     volumes:
-      - ./data/db:/data/db
+      - ./data:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=rootuser
+      - MONGO_INITDB_ROOT_PASSWORD=rootpass
     networks:
       - test-network
 
-#  mongodb:
-#    image: mongo
-#    container_name: mongodb
-#    ports:
-#      - 27017:27017
-#    volumes:
-#      - ./data:/data/db
-#    environment:
-#      - MONGO_INITDB_ROOT_USERNAME=rootuser
-#      - MONGO_INITDB_ROOT_PASSWORD=rootpass
-#    networks:
-#      - test-network
-#
 #  mongo-express:
 #    image: mongo-express
 #    container_name: mongo-express
+#    hostname: mongodb
 #    restart: always
 #    ports:
 #      - 8081:8081
@@ -42,20 +34,6 @@ services:
 #    networks:
 #      - test-network
 
-  noticeboard:
-    image: noticeboard
-    build:
-      dockerfile: Dockerfile
-    container_name: noticeboard
-    restart: on-failure
-    ports:
-      - 9090:9090
-    networks:
-      - test-network
-    depends_on:
-      - mongo-database
-      - redis-database
-
   redis-database:
     image: redis
     build:
@@ -67,6 +45,22 @@ services:
       - 6379:6379
     networks:
       - test-network
+    depends_on:
+      - mongodb
+
+  noticeboard:
+    image: noticeboard
+    build:
+      dockerfile: Dockerfile
+    container_name: noticeboard
+    restart: on-failure
+    ports:
+      - 9090:9090
+    networks:
+      - test-network
+    depends_on:
+      - mongodb
+      - redis-database
 
 networks:
   test-network:
