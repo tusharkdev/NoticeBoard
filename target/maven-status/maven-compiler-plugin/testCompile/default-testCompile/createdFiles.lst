@@ -1,0 +1,4 @@
+com/board/announcement/service/UserServiceTest.class
+com/board/announcement/service/GroupServiceTest.class
+com/board/announcement/SpringBootTests.class
+com/board/announcement/service/PostsServiceTest.class

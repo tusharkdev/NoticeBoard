@@ -15,4 +15,10 @@ public class UserService {
     public User findUserById(String userId) {
         return userRepository.findById(String.valueOf(new ObjectId(userId))).get();
     }
+
+    public User saveUser(User newUser){
+        User user = userRepository.save(newUser);
+        return user;
+    }
+
 }

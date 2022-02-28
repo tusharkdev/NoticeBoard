@@ -9,10 +9,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class PostsService {
@@ -29,13 +29,13 @@ public class PostsService {
     public Post savePost(Post post) {
         Cache cache = cacheManager.getCache("postsCache");
         List<Post> posts = new ArrayList<>();
-        Cache.ValueWrapper cacheValue = cache.get(post.getGroupId());
+        Cache.ValueWrapper cacheValue = null;
+        if (cache != null) cacheValue = cache.get(post.getGroupId());
         if (cacheValue != null) {
-            List<Post> tempList = (List) (cacheValue.get());
-            if (tempList.size() >= 5) {
+            List tempList = (List) (cacheValue.get());
+            if (!tempList.isEmpty() && tempList.size() >= 5) {
                 posts = new ArrayList(tempList.subList(0, 5));
-            } else
-                posts = tempList;
+            } else posts = tempList;
         }
         posts.add(0, post);
         postRepository.save(post);
@@ -48,13 +48,13 @@ public class PostsService {
     public Post deletePost(Post post) {
         Cache cache = cacheManager.getCache("postsCache");
         List<Post> posts = new ArrayList<>();
-        Cache.ValueWrapper cacheValue = cache.get(post.getGroupId());
+        Cache.ValueWrapper cacheValue = null;
+        if (cache != null) cacheValue = cache.get(post.getGroupId());
         if (cacheValue != null) {
             List<Post> tempList = (List) (cacheValue.get());
-            if (tempList.size() >= 5) {
+            if (!tempList.isEmpty() && tempList.size() >= 5) {
                 posts = new ArrayList(tempList.subList(0, 5));
-            } else
-                posts = tempList;
+            } else posts = tempList;
         }
         posts.remove(post);
         postRepository.delete(post);
@@ -68,22 +68,27 @@ public class PostsService {
         List<Post> result = new ArrayList<>();
         Cache cache = cacheManager.getCache("postsCache");
         List<Post> tempList;
+        Cache.ValueWrapper cacheValue = null;
 
-        User user = userRepository.findById(String.valueOf(new ObjectId(userId))).get();
+        Optional<User> user = userRepository.findById(String.valueOf(new ObjectId(userId)));
 
-        for (String groupId : user.getGroupIds()) {
-            Cache.ValueWrapper cacheValue = cache.get(groupId);
-            if (cacheValue != null) {
-                tempList = (List) (cacheValue.get());
-            } else {
-                tempList = postRepository.findPosts(groupId);
-                if (!tempList.isEmpty())
-                    cache.putIfAbsent(groupId, tempList);
+        if (user.isPresent()) {
+            for (String groupId : user.get().getGroupIds()) {
+                if (cache != null) cacheValue = cache.get(groupId);
+                if (cacheValue != null) {
+                    tempList = (List) (cacheValue.get());
+                } else {
+                    tempList = postRepository.findPosts(groupId);
+                    if (!tempList.isEmpty()) cache.putIfAbsent(groupId, tempList);
+                }
+                if (!tempList.isEmpty()) result.addAll(tempList);
             }
-            if (!tempList.isEmpty())
-                result.addAll(tempList);
         }
         return result;
+    }
+
+    public List<Post> getPostsByGroupId(String groupId) {
+        return postRepository.findPosts((new ObjectId(groupId)).toString());
     }
 
 }

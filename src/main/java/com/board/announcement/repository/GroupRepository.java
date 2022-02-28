@@ -17,4 +17,7 @@ public interface GroupRepository extends MongoRepository<Group, String> {
     List<Group> findAll(String groupName);
 
     public long count();
+
+    @Override
+    Group save(Group group);
 }
