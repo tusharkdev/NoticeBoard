@@ -1,63 +1,91 @@
 package com.board.announcement.service;
 
-import com.board.announcement.SpringBootTests;
-import com.board.announcement.exceptions.UserNotFoundException;
+import com.board.announcement.model.Group;
 import com.board.announcement.model.User;
 import com.board.announcement.repository.GroupRepository;
 import com.board.announcement.repository.UserRepository;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.stubbing.Answer;
-import org.springframework.cache.CacheManager;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.util.Assert;
+import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.ArrayList;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
-public class GroupServiceTest extends SpringBootTests {
+@SpringBootTest
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+public class GroupServiceTest {
 
-    @Mock
-    UserRepository userRepository;
+    @MockBean
+    UserService userService;
 
-    @Mock
+    @Autowired
     GroupRepository groupRepository;
 
-    @Mock
-    CacheManager cacheManager;
+    @Autowired
+    UserRepository userRepository;
 
-    @Mock
+    @Autowired
     GroupService groupService;
 
-    @Mock
-    MongoTemplate mongoTemplate;
+    Group group = new Group();
+    User sender, receiver;
+    Group group1;
 
-    @Mock
-    Query query;
-
-    @Mock
-    User user;
+    @BeforeAll
+    public void setUp() {
+        group.setGroupName("TestGroup");
+        group.setDescription("Test group");
+        group1 = groupRepository.save(group);
+        User user = new User();
+        user.setFirstName("Tushar");
+        user.setLastName("Kamble");
+        user.setMobileNumber("9090909090");
+        user.setGroupIds(new ArrayList<>());
+        sender = userRepository.save(user);
+        user.setFirstName("Prasad");
+        user.setLastName("K");
+        user.setMobileNumber("9090909090");
+        user.setGroupIds(new ArrayList<>());
+        receiver = userRepository.save(user);
+    }
 
     @Test
-    public void subscribeUserToNonExistingGroupTest(){
-//        Mockito.<Optional<User>>when(userRepository.findById(anyString())).thenReturn(Optional.of(user));
-//        Mockito.when(userRepository.findById(anyString())).thenThrow(new UserNotFoundException("User not found"));
-//        Mockito.doNothing().when(query.addCriteria(any()));
-//        Mockito.doNothing().when(mongoTemplate.findAndModify(query, any(), User.class));
-//
-//        assertThrows(UserNotFoundException.class, () -> {
-//            groupService.subscribeUserToGroup(anyString(), anyString());
-//        });
-//        assertThat(groupService.subscribeUserToGroup(anyString(), anyString())).isEqualTo("User subscribed to group");
+    public void subscriptionTest() {
+        when(userService.findUserById(sender.getId())).thenReturn(sender);
+        Assertions.assertEquals("User subscribed to group", groupService.subscribeUserToGroup(sender.getId(), group.getGroupId()));
+    }
+
+    @Test
+    public void subscriptionUserNotFoundTest() {
+        when(userService.findUserById("123456")).thenReturn(null);
+        Assertions.assertEquals("User does not exist", groupService.subscribeUserToGroup(sender.getId(), group.getGroupId()));
+    }
+
+    @Test
+    public void unsubscribeTest() {
+        groupService.subscribeUserToGroup(sender.getId(), group.getGroupId());
+        when(userService.findUserById(sender.getId())).thenReturn(sender);
+        Assertions.assertEquals("User unsubscribed to group", groupService.unsubscribeUserFromGroup(sender.getId(), group.getGroupId()));
+    }
+
+    @Test
+    public void unsubscribeUserNotFoundTest() {
+        when(userService.findUserById("62237dcb40d8d65795a78e35")).thenReturn(null);
+        Assertions.assertEquals("User does not exist", groupService.unsubscribeUserFromGroup("62237dcb40d8d65795a78e35", group.getGroupId()));
+    }
+
+    @Test
+    public void unsubscribeGroupNotFoundTest() {
+        when(userService.findUserById(sender.getId())).thenReturn(sender);
+        Assertions.assertEquals("Group not found 12345", groupService.unsubscribeUserFromGroup(sender.getId(), "12345"));
+    }
+
+    @AfterAll
+    public void cleanUp() {
+        userRepository.delete(sender);
+        userRepository.delete(receiver);
+        groupRepository.delete(group1);
     }
 }

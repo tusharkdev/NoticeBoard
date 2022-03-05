@@ -1,0 +1,47 @@
+apiVersion: v1 # Kubernetes API version
+kind: Service # Kubernetes resource kind we are creating
+metadata: # Metadata of the resource kind we are creating
+  name: noticeboard-service
+spec:
+  selector:
+    app: noticeboard
+  ports:
+    - protocol: "TCP"
+      port: 9090 # The port that the service is running on in the cluster
+      targetPort: 9090 # The port exposed by the service
+  type: LoadBalancer # type of the service. LoadBalancer indicates that our service will be external.
+---
+apiVersion: apps/v1
+kind: Deployment # Kubernetes resource kind we are creating
+metadata:
+  name: noticeboard-app
+spec:
+  selector:
+    matchLabels:
+      app: noticeboard-app
+  replicas: 2 # Number of replicas that will be created for this deployment
+  template:
+    metadata:
+      labels:
+        app: noticeboard-app
+    spec:
+      containers:
+        - name: noticeboard-app
+          image: noticeboard # Image that will be used to containers in the cluster
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9090 # The port that the container is running on in the cluster
+
+apiVersion: mongodb.com/v1
+kind: MongoDB
+metadata:
+  name: mongo
+spec:
+  version: "4.2.2-ent"
+  opsManager:
+    configMapRef:
+      name: <configMap.metadata.name>
+      # Must match metadata.name in ConfigMap file
+  credentials: <mycredentials>
+  type: Standalone
+  persistent: true

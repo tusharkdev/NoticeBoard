@@ -5,6 +5,7 @@ import com.board.announcement.model.Group;
 import com.board.announcement.model.User;
 import com.board.announcement.repository.GroupRepository;
 import com.board.announcement.repository.UserRepository;
+import org.apache.kafka.common.errors.GroupIdNotFoundException;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
@@ -25,6 +26,9 @@ public class GroupService {
     UserRepository userRepository;
 
     @Autowired
+    UserService userService;
+
+    @Autowired
     GroupRepository groupRepository;
 
     @Autowired
@@ -38,9 +42,9 @@ public class GroupService {
         String message = "User subscribed to group";
         try {
             System.out.println(userId + " " + groupId);
-            Optional<User> user = userRepository.findById(String.valueOf(new ObjectId(userId)));
-            if (user.isPresent()) {
-                groupIds = user.get().getGroupIds();
+            User user = userService.findUserById(String.valueOf(new ObjectId(userId)));
+            if (user != null) {
+                groupIds = user.getGroupIds();
                 if (groupIds == null)
                     groupIds = new ArrayList<>();
                 groupIds.add(groupId);
@@ -49,13 +53,10 @@ public class GroupService {
                 Update updateQuery = new Update();
                 updateQuery.set("groupIds", groupIds);
                 mongoTemplate.findAndModify(query, updateQuery, User.class);
-            }
-            else
+            } else
                 throw new UserNotFoundException("User does not exist");
-        }
-        catch (Exception e)
-        {
-            message=e.getMessage();
+        } catch (Exception e) {
+            message = e.getMessage();
         }
 
         return message;
@@ -64,14 +65,24 @@ public class GroupService {
 
     public String unsubscribeUserFromGroup(String userId, String groupId) {
         System.out.println(userId + " " + groupId);
-        List<String> groupIds = userRepository.findById(String.valueOf(new ObjectId(userId))).get().getGroupIds();
-        groupIds.remove(groupId);
-        Query query = new Query();
-        query.addCriteria(Criteria.where("_id").is(String.valueOf(new ObjectId(userId))));
-        Update updateQuery = new Update();
-        updateQuery.set("groupIds", groupIds);
-        mongoTemplate.findAndModify(query, updateQuery, User.class);
-        String message = "User unsubscribed from group";
+        String message = "User unsubscribed to group";
+
+        try {
+            User user = userService.findUserById(String.valueOf(new ObjectId(userId)));
+            if (user == null)
+                throw new UserNotFoundException("User does not exist");
+            List<String> groupIds = user.getGroupIds();
+            if (groupIds.isEmpty() || !groupIds.contains(groupId))
+                throw new GroupIdNotFoundException("Group not found " + groupId);
+            groupIds.remove(groupId);
+            Query query = new Query();
+            query.addCriteria(Criteria.where("_id").is(String.valueOf(new ObjectId(userId))));
+            Update updateQuery = new Update();
+            updateQuery.set("groupIds", groupIds);
+            mongoTemplate.findAndModify(query, updateQuery, User.class);
+        } catch (Exception e) {
+            message = e.getMessage();
+        }
         return message;
     }
 

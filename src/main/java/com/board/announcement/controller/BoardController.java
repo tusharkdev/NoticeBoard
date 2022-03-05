@@ -13,6 +13,7 @@ import lombok.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,6 +23,7 @@ import java.util.Map;
 
 @RestController
 @PropertySource("classpath:dev.properties")
+@RequestMapping("/board")
 public class BoardController {
 
     @Autowired
@@ -159,10 +161,15 @@ public class BoardController {
         }
     }
 
-    @RequestMapping("/send-notification")
+    @PostMapping("/send-notification")
     @ResponseBody
     public String sendNotification(@RequestBody Note note,
                                    @RequestParam String token) throws FirebaseMessagingException {
         return firebaseMessagingService.sendNotification(note, token);
+    }
+
+    @RequestMapping(method = RequestMethod.GET, value = "/api/noticeboard")
+    public String sayHello() {
+        return "Swagger Hello World";
     }
 }

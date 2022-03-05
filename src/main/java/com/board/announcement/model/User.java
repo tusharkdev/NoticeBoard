@@ -41,7 +41,4 @@ public class User {
 //        this.groupIds = new ArrayList<>();
 //    }
 
-    public void addGroupIds(String groupId) {
-        groupIds.add(groupId);
-    }
 }
