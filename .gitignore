@@ -1,6 +1,7 @@
 .classpath
 .project
 .settings/
-/target
-/data
-/.idea
+target
+data
+.idea
+firebase-cred.json
