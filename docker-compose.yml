@@ -36,8 +36,8 @@ services:
 
   redis-database:
     image: redis
-    build:
-      dockerfile: Dockerfile
+#     build:
+#       dockerfile: Dockerfile
     container_name: redis
     restart: on-failure
     hostname: redis-database
@@ -50,8 +50,8 @@ services:
 
   noticeboard:
     image: noticeboard
-    build:
-      dockerfile: Dockerfile
+#     build:
+#       dockerfile: Dockerfile
     container_name: noticeboard
     restart: on-failure
     ports:
